@@ -2,77 +2,142 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصف الافتراضي للفيزياء (أول ثانوي) - الأستاذ عمر حسان عبره</title>
-    <!-- Three.js Library -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>الصف الافتراضي الهجين للفيزياء - الأستاذ عمر حسان عبره</title>
+    
+    <!-- Three.js 3D WebGL Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <style>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body, html { width: 100%; height: 100%; overflow: hidden; background: #070b14; color: #f8fafc; font-family: "Cairo", "Tajawal", sans-serif; direction: rtl; user-select: none; }
-      
-      .app-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-      #canvas-container { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; cursor: grab; }
-      #canvas-container:active { cursor: grabbing; }
 
-      /* Fixed HUD Top Bar (Never Moves) */
-      .top-hud {
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :root {
+        --bg-dark: #070b14;
+        --panel-bg: rgba(15, 23, 42, 0.92);
+        --panel-border: rgba(51, 65, 85, 0.65);
+        --accent-amber: #f59e0b;
+        --accent-emerald: #10b981;
+        --accent-blue: #38bdf8;
+        --text-main: #f8fafc;
+        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tajawal", sans-serif;
+      }
+
+      body, html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        font-family: var(--font-family);
+        direction: rtl;
+        user-select: none;
+      }
+
+      .app-layout {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* 3D Viewport Mount */
+      #classroom-canvas-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        cursor: grab;
+      }
+      #classroom-canvas-container:active { cursor: grabbing; }
+
+      /* --- FIXED HUD TOP BAR --- */
+      .top-hud-bar {
         position: fixed;
         top: 12px;
         right: 12px;
         left: 12px;
         z-index: 50;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
         pointer-events: none;
       }
-      .hud-group { display: flex; gap: 8px; pointer-events: auto; }
+
+      .hud-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+      }
+
       .hud-badge {
         background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(51, 65, 85, 0.6);
-        padding: 8px 16px;
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--panel-border);
+        padding: 6px 14px;
         border-radius: 20px;
         font-size: 13px;
         font-weight: 700;
         color: #fde68a;
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       }
+
       .hud-btn {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(51, 65, 85, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--panel-border);
         color: #fff;
         font-size: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all 0.2s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       }
+
       .hud-btn:hover, .hud-btn.active {
         background: rgba(245, 158, 11, 0.3);
-        border-color: #f59e0b;
-        color: #fde68a;
-        transform: scale(1.05);
+        border-color: var(--accent-amber);
+        color: var(--accent-amber);
+        transform: scale(1.06);
       }
 
-      /* Slim Fixed Floating Side Panel (Doesn't block view) */
+      .btn-height {
+        background: rgba(217, 119, 6, 0.85);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.4);
+        padding: 6px 10px;
+        border-radius: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 11px;
+        backdrop-filter: blur(8px);
+      }
+
+      /* Slim Floating Side Panel */
       .side-drawer {
         position: fixed;
-        top: 70px;
+        top: 65px;
         right: 12px;
-        width: 310px;
-        max-height: calc(100vh - 90px);
+        width: 320px;
+        max-height: calc(100vh - 85px);
         z-index: 40;
-        background: rgba(15, 23, 42, 0.92);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(51, 65, 85, 0.6);
-        border-radius: 14px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
         display: none;
         flex-direction: column;
         overflow: hidden;
@@ -83,27 +148,29 @@
       .drawer-header {
         padding: 10px 14px;
         background: rgba(30, 41, 59, 0.6);
-        border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        border-bottom: 1px solid var(--panel-border);
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        font-size: 12px;
+        justify-content: space-between;
+        font-size: 13px;
         font-weight: 700;
       }
+
       .chat-box {
         flex: 1;
         overflow-y: auto;
         padding: 10px;
-        max-height: 280px;
+        max-height: 290px;
         display: flex;
         flex-direction: column;
         gap: 8px;
       }
+
       .msg {
-        padding: 8px 10px;
-        border-radius: 10px;
-        font-size: 11.5px;
-        line-height: 1.4;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        line-height: 1.5;
       }
       .msg-teacher { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); }
       .msg-user { background: #0284c7; align-self: flex-end; }
@@ -113,249 +180,392 @@
         padding: 8px;
         gap: 6px;
         background: rgba(15, 23, 42, 0.95);
-        border-top: 1px solid rgba(51, 65, 85, 0.4);
+        border-top: 1px solid var(--panel-border);
       }
       .drawer-input-row input {
         flex: 1;
         background: rgba(30, 41, 59, 0.8);
-        border: 1px solid rgba(51, 65, 85, 0.6);
+        border: 1px solid var(--panel-border);
         border-radius: 8px;
         padding: 6px 10px;
         color: #fff;
-        font-size: 11.5px;
+        font-size: 12px;
         outline: none;
       }
 
-      /* Controls D-Pad Overlay Box */
+      /* Controls D-Pad Drawer */
       .controls-drawer {
         position: fixed;
-        top: 70px;
+        top: 65px;
         left: 12px;
-        width: 260px;
+        width: 250px;
         z-index: 40;
-        background: rgba(15, 23, 42, 0.92);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(51, 65, 85, 0.6);
-        border-radius: 14px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
         padding: 12px;
         display: none;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       }
       .controls-drawer.open { display: flex; }
+
       .dpad-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 4px;
-        text-align: center;
+        gap: 6px;
       }
       .d-btn {
-        background: rgba(30, 41, 59, 0.8);
+        background: rgba(30, 41, 59, 0.85);
         border: 1px solid rgba(71, 85, 105, 0.6);
         color: #fff;
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 12px;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 14px;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      .d-btn:active { background: #f59e0b; color: #000; }
+      .d-btn:active { background: var(--accent-amber); color: #000; }
+
+      /* Mic Modal */
+      #mic-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(7, 11, 20, 0.88);
+        backdrop-filter: blur(12px);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      }
+      #mic-modal.open { display: flex; }
+      .mic-wave {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
+        animation: pulseMic 1.5s infinite;
+      }
+      @keyframes pulseMic {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        70% { box-shadow: 0 0 0 22px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+      }
+
+      /* Welcome Screen Overlay */
+      #welcome-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(15, 23, 42, 0.96);
+        backdrop-filter: blur(16px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        padding: 24px;
+      }
+      #welcome-modal button {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        font-size: 17px;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-top: 18px;
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45);
+      }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- 3D Canvas Viewport -->
-        <div id="canvas-container"></div>
 
-        <!-- Fixed Top HUD Bar (Icons don't move with camera) -->
-        <div class="top-hud">
+    <!-- Start Modal -->
+    <div id="welcome-modal">
+        <h2 style="font-size: 24px; margin-bottom: 10px;">⚛️ فصل الفيزياء الافتراضي 3D</h2>
+        <p style="color: #cbd5e1; font-size: 14px;">إشراف وتدريب: الأستاذ عمر حسان عبره</p>
+        <button onclick="startClassroom()">دخول الفصل الافتراضي 🚪</button>
+    </div>
+
+    <div class="app-layout">
+        <!-- 3D Canvas Mount -->
+        <div id="classroom-canvas-container"></div>
+
+        <!-- Hidden Video Element & Canvas for Chroma-Key Engine -->
+        <video id="teacherVideo" src="teacher-video.mp4" loop autoplay muted playsinline crossorigin="anonymous" style="display:none;"></video>
+        <canvas id="chromaCanvas" width="512" height="768" style="display:none;"></canvas>
+
+        <!-- Top Fixed HUD Controls -->
+        <div class="top-hud-bar">
             <div class="hud-group">
-                <div class="hud-badge">📚 الصف الأول الثانوي • الأستاذ عمر حسان عبره</div>
+                <div class="hud-badge">⚛️ صف الفيزياء • الأستاذ عمر حسان عبره</div>
+                <button class="btn-height" onclick="changeCamHeight(0.35)">▲ أعلى</button>
+                <button class="btn-height" onclick="changeCamHeight(-0.35)">▼ أسفل</button>
             </div>
             <div class="hud-group">
-                <button class="hud-btn" id="btn-chat" onclick="toggleDrawer('chat')" title="لوحة المحادثة والكتابة">💬</button>
-                <button class="hud-btn" id="btn-ctrl" onclick="toggleDrawer('controls')" title="أزرار التجول والتحكم">🎮</button>
-                <button class="hud-btn" onclick="saveLessonPDF()" title="حفظ الدرس PDF">📥</button>
-                <button class="hud-btn" onclick="resetCam()" title="ضبط الرؤية">👁️</button>
+                <button class="hud-btn" id="btn-chat" onclick="toggleDrawer('chat')" title="المحادثة والشرح">💬</button>
+                <button class="hud-btn" id="btn-ctrl" onclick="toggleDrawer('controls')" title="أزرار التجول">🎮</button>
+                <button class="hud-btn" onclick="openMicModal()" title="الحديث بالمايك">🎙️</button>
+                <button class="hud-btn" onclick="downloadStandaloneApp()" title="تصدير التطبيق HTML">📥</button>
+                <button class="hud-btn" onclick="resetCamView()" title="عرض الفصل العام">👁️</button>
             </div>
         </div>
 
-        <!-- Chat / Writing Drawer Panel -->
+        <!-- Chat / Writing Side Drawer -->
         <div class="side-drawer" id="drawer-chat">
             <div class="drawer-header">
-                <span>👨‍🏫 شرح المعلم الأسئلة</span>
+                <span>👨‍🏫 لوحة شرح المعلم الذكي</span>
                 <span style="cursor:pointer; color:#94a3b8;" onclick="toggleDrawer('chat')">✕</span>
             </div>
             <div class="chat-box" id="chat-messages">
-                <div class="msg msg-teacher">أهلاً بك يا بطل في صف الفيزياء (أول ثانوي). اطرح سؤالك وسأشرحه وأكتبه لك فوراً على السبورة الذكية!</div>
+                <div class="msg msg-teacher">أهلاً بك يا بطل الفيزياء في الصف الافتراضي! يمكنك طرح سؤالك كتابةً أو بالصوت، وسيتم تدوينه لشرحه على السبورة.</div>
             </div>
-            <form class="drawer-input-row" onsubmit="handleUserQuery(event)">
-                <input type="text" id="user-input" placeholder="اسأل الأستاذ عمر عن أي درس..." autocomplete="off">
-                <button type="submit" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:#fff; cursor:pointer; font-size:11px;">إرسال</button>
+            <form class="drawer-input-row" onsubmit="handleChatSubmit(event)">
+                <input type="text" id="user-input" placeholder="اسأل الأستاذ عمر..." autocomplete="off">
+                <button type="submit" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:#fff; cursor:pointer; font-size:12px;">إرسال</button>
             </form>
         </div>
 
-        <!-- Navigation D-Pad Controls Drawer -->
+        <!-- D-Pad Controls Drawer -->
         <div class="controls-drawer" id="drawer-controls">
             <div class="drawer-header" style="background:none; border:none; padding:0 0 4px 0;">
-                <span style="font-size: 12px; font-weight:700;">أزرار التجول في الفصل</span>
+                <span>🎮 التجول داخل الصف</span>
                 <span style="cursor:pointer; color:#94a3b8;" onclick="toggleDrawer('controls')">✕</span>
             </div>
             <div class="dpad-grid">
                 <div></div>
-                <button class="d-btn" onmousedown="moveState.fwd=true" onmouseup="moveState.fwd=false" onttouchstart="moveState.fwd=true" ontouchend="moveState.fwd=false">▲</button>
+                <button class="d-btn" onmousedown="moveState.fwd=true" onmouseup="moveState.fwd=false" ontouchstart="moveState.fwd=true" ontouchend="moveState.fwd=false">▲</button>
                 <div></div>
-                <button class="d-btn" onmousedown="moveState.left=true" onmouseup="moveState.left=false">◀</button>
-                <button class="d-btn" onclick="resetCam()">•</button>
-                <button class="d-btn" onmousedown="moveState.right=true" onmouseup="moveState.right=false">▶</button>
+                <button class="d-btn" onmousedown="moveState.left=true" onmouseup="moveState.left=false" ontouchstart="moveState.left=true" ontouchend="moveState.left=false">◀</button>
+                <button class="d-btn" onclick="resetCamView()">•</button>
+                <button class="d-btn" onmousedown="moveState.right=true" onmouseup="moveState.right=false" ontouchstart="moveState.right=true" ontouchend="moveState.right=false">▶</button>
                 <div></div>
-                <button class="d-btn" onmousedown="moveState.back=true" onmouseup="moveState.back=false">▼</button>
+                <button class="d-btn" onmousedown="moveState.back=true" onmouseup="moveState.back=false" ontouchstart="moveState.back=true" ontouchend="moveState.back=false">▼</button>
                 <div></div>
             </div>
+        </div>
+
+        <!-- Mic Voice Listening Modal -->
+        <div id="mic-modal">
+            <div class="mic-wave">🎙️</div>
+            <h3 style="color:#fff; font-size:18px;">الأستاذ عمر حسان يستمع إليك...</h3>
+            <p id="student-speech-text" style="color:#fde68a; font-size:14px;">(تحدث الآن...)</p>
+            <button onclick="closeMicModal()" style="background:rgba(255,255,255,0.1); border:1px solid #94a3b8; padding:8px 18px; border-radius:8px; color:#fff; cursor:pointer;">إلغاء</button>
         </div>
     </div>
 
     <script>
+      // Global States
       let scene, camera, renderer, blackboardTexture, boardCtx;
+      let teacherVideo, chromaCanvas, chromaCtx, chromaTexture;
+      let isVideoAvatarActive = false;
+      let jawMesh, atomGroup, pendulumBalls = [];
       let moveState = { fwd: false, back: false, left: false, right: false };
-      let camPos = { x: 0, y: 1.65, z: 4.5 };
+      let camPos = { x: 0, y: 1.65, z: 4.8, rotY: 0 };
 
-      function init() {
-        const container = document.getElementById('canvas-container');
+      const welcomeSpeechText = "مرحباً بك يا بطل الفيزياء في الصف الافتراضي الخاص بـ 3D Axis. أنا معلمك الافتراضي عمر حسان عبره، يمكنك السؤال كتابة أو بالصوت وسأشرح لك فوراً!";
+
+      function init3DEngine() {
+        const container = document.getElementById('classroom-canvas-container');
+        
         scene = new THREE.Scene();
-        scene.background = new THREE.Color('#0f172a');
+        scene.background = new THREE.Color('#070b14');
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(camPos.x, camPos.y, camPos.z);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // Lights
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(5, 10, 5);
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+        const sun = new THREE.DirectionalLight(0xfffbeb, 1.3);
+        sun.position.set(8, 12, 6);
+        sun.castShadow = true;
         scene.add(sun);
 
-        // Floor (Luxury Marble)
-        const floor = new THREE.Mesh(
-          new THREE.PlaneGeometry(14, 16),
-          new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.15 })
-        );
+        // 1. Marble Floor
+        const floorMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.15, metalness: 0.05 });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 18), floorMat);
         floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
         scene.add(floor);
 
-        // Walls
-        const wallMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.5 });
-        const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 5), wallMat);
-        frontWall.position.set(0, 2.5, -7);
+        // 2. Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.4 });
+        const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 5.2), wallMat);
+        frontWall.position.set(0, 2.6, -8);
         scene.add(frontWall);
 
-        // Dynamic Blackboard with Golden Frame & Live Canvas Writing
+        // 3. Dynamic Blackboard & Golden Frame
         const bCanvas = document.createElement('canvas');
         bCanvas.width = 1024; bCanvas.height = 512;
         boardCtx = bCanvas.getContext('2d');
-        updateBoardContent("قوانين الحركة والميكانيكا (أول ثانوي)", "F = m · a  |  W = F · d");
+        updateBoardContent("قوانين نيوتن والحركة (أول ثانوي)", "F = m · a  |  W = F · d · cos(θ)");
 
         blackboardTexture = new THREE.CanvasTexture(bCanvas);
         const board = new THREE.Mesh(
-          new THREE.PlaneGeometry(7.2, 3.2),
-          new THREE.MeshBasicMaterial({ map: blackboardTexture })
+          new THREE.PlaneGeometry(7.6, 3.4),
+          new THREE.MeshStandardMaterial({ map: blackboardTexture, roughness: 0.5 })
         );
-        board.position.set(0, 2.4, -6.85);
+        board.position.set(0, 2.5, -7.85);
         scene.add(board);
 
-        // Golden Wooden Frame for Blackboard
-        const frameMat = new THREE.MeshStandardMaterial({ color: '#d97706', roughness: 0.3 });
-        const topF = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.12, 0.1), frameMat);
-        topF.position.set(0, 4.05, -6.82);
+        // Golden Frame
+        const frameMat = new THREE.MeshStandardMaterial({ color: '#b45309', roughness: 0.3, metalness: 0.3 });
+        const topF = new THREE.Mesh(new THREE.BoxGeometry(7.9, 0.12, 0.12), frameMat);
+        topF.position.set(0, 4.25, -7.82);
         scene.add(topF);
-        const botF = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.12, 0.1), frameMat);
-        botF.position.set(0, 0.75, -6.82);
+        const botF = new THREE.Mesh(new THREE.BoxGeometry(7.9, 0.12, 0.12), frameMat);
+        botF.position.set(0, 0.75, -7.82);
         scene.add(botF);
 
-        // Real Desks with Notebooks & Pens (كراسات وقلم ع الطاولة)
-        [-2.5, 0, 2.5].forEach((x, idx) => {
-            const deskGroup = new THREE.Group();
-            deskGroup.position.set(x, 0, idx * 2.2 - 1);
+        // 4. Real Desks with Books & Pens
+        [-3.2, 0, 3.2].forEach((x, idx) => {
+          const deskGroup = new THREE.Group();
+          deskGroup.position.set(x, 0, idx * 2.2 - 0.5);
 
-            // Table top
-            const top = new THREE.Mesh(
-                new THREE.BoxGeometry(1.5, 0.06, 0.8),
-                new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.4 })
-            );
-            top.position.y = 0.76;
-            deskGroup.add(top);
+          const top = new THREE.Mesh(
+            new THREE.BoxGeometry(1.8, 0.06, 0.8),
+            new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.4 })
+          );
+          top.position.y = 0.76;
+          deskGroup.add(top);
 
-            // Notebook on table
-            const book = new THREE.Mesh(
-                new THREE.BoxGeometry(0.35, 0.02, 0.45),
-                new THREE.MeshStandardMaterial({ color: '#ffffff' })
-            );
-            book.position.set(0.2, 0.80, 0);
-            deskGroup.add(book);
+          // Notebook & Pen
+          const book = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.45), new THREE.MeshStandardMaterial({ color: '#ffffff' }));
+          book.position.set(0.3, 0.8, 0);
+          deskGroup.add(book);
 
-            // Pen on table
-            const pen = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.006, 0.006, 0.25),
-                new THREE.MeshStandardMaterial({ color: '#2563eb' })
-            );
-            pen.position.set(-0.2, 0.80, 0.1);
-            pen.rotation.z = Math.PI / 3;
-            deskGroup.add(pen);
+          const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.25), new THREE.MeshStandardMaterial({ color: '#0284c7' }));
+          pen.position.set(-0.3, 0.8, 0.1);
+          pen.rotation.z = Math.PI / 3;
+          deskGroup.add(pen);
 
-            scene.add(deskGroup);
+          // Chairs
+          [-0.45, 0.45].forEach(cx => {
+            const chair = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.04, 0.42), new THREE.MeshStandardMaterial({ color: '#1e293b' }));
+            chair.position.set(cx, 0.46, 0.65);
+            deskGroup.add(chair);
+          });
+
+          scene.add(deskGroup);
         });
 
-        // 3D Teacher Avatar (الأستاذ عمر حسان عبره)
-        const teacher = new THREE.Group();
-        teacher.position.set(-1.6, 0, -5.2);
-        
-        const body = new THREE.Mesh(
-            new THREE.BoxGeometry(0.48, 0.7, 0.28),
-            new THREE.MeshStandardMaterial({ color: '#1e3a8a' })
-        );
+        // 5. Dual Engine Teacher Avatar (3D Mesh + Video Chroma Plane Ready)
+        const teacherGroup = new THREE.Group();
+        teacherGroup.position.set(-1.8, 0, -6.2);
+
+        // Video Chroma Mesh Plane (For real video integration)
+        chromaCanvas = document.getElementById('chromaCanvas');
+        chromaCtx = chromaCanvas.getContext('2d');
+        chromaTexture = new THREE.CanvasTexture(chromaCanvas);
+
+        const videoPlaneMat = new THREE.MeshBasicMaterial({ map: chromaTexture, transparent: true, opacity: 0 });
+        const videoMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 3.2), videoPlaneMat);
+        videoMesh.position.set(0, 1.6, 0);
+        teacherGroup.add(videoMesh);
+
+        // Stylized 3D Avatar (Fallback mesh)
+        const suitMat = new THREE.MeshStandardMaterial({ color: '#1e3a8a' });
+        const skinMat = new THREE.MeshStandardMaterial({ color: '#f5d0b0' });
+
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.72, 0.3), suitMat);
         body.position.y = 1.25;
-        teacher.add(body);
+        teacherGroup.add(body);
 
-        const head = new THREE.Mesh(
-            new THREE.SphereGeometry(0.17, 16, 16),
-            new THREE.MeshStandardMaterial({ color: '#f5d0b0' })
-        );
-        head.position.y = 1.75;
-        teacher.add(head);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 20), skinMat);
+        head.position.y = 1.76;
+        teacherGroup.add(head);
 
-        scene.add(teacher);
+        jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.04), new THREE.MeshStandardMaterial({ color: '#991b1b' }));
+        jawMesh.position.set(0, 1.68, 0.17);
+        teacherGroup.add(jawMesh);
+
+        const pointer = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.015, 0.85), new THREE.MeshStandardMaterial({ color: '#f59e0b', metalness: 0.8 }));
+        pointer.position.set(0.35, 1.3, 0.2);
+        pointer.rotation.z = -Math.PI / 4;
+        teacherGroup.add(pointer);
+
+        scene.add(teacherGroup);
 
         window.addEventListener('resize', onWindowResize);
         animate();
       }
 
+      function startClassroom() {
+        document.getElementById('welcome-modal').style.display = 'none';
+        
+        teacherVideo = document.getElementById('teacherVideo');
+        teacherVideo.muted = true;
+        teacherVideo.play().then(() => {
+          processVideoChromaFrame();
+        }).catch(() => {});
+
+        setTimeout(() => {
+          speakTeacherText(welcomeSpeechText);
+        }, 400);
+      }
+
+      function processVideoChromaFrame() {
+        if (teacherVideo && !teacherVideo.paused && !teacherVideo.ended && teacherVideo.readyState >= 2) {
+          chromaCtx.drawImage(teacherVideo, 0, 0, chromaCanvas.width, chromaCanvas.height);
+          const frame = chromaCtx.getImageData(0, 0, chromaCanvas.width, chromaCanvas.height);
+          const len = frame.data.length / 4;
+
+          for (let i = 0; i < len; i++) {
+            const r = frame.data[i * 4 + 0];
+            const g = frame.data[i * 4 + 1];
+            const b = frame.data[i * 4 + 2];
+            // Green Screen Filter
+            if (g > 90 && r < 140 && b < 140 && g > r * 1.1) {
+              frame.data[i * 4 + 3] = 0;
+            }
+          }
+          chromaCtx.putImageData(frame, 0, 0);
+          if (chromaTexture) chromaTexture.needsUpdate = true;
+        }
+        requestAnimationFrame(processVideoChromaFrame);
+      }
+
       function updateBoardContent(title, formula) {
-        // Clear board background (Dark green slate)
         boardCtx.fillStyle = '#0f241d';
         boardCtx.fillRect(0, 0, 1024, 512);
 
-        // Top-right Header (Name & Subject requirement)
+        // Header Title
         boardCtx.fillStyle = '#fde68a';
         boardCtx.font = 'bold 28px "Cairo", sans-serif';
         boardCtx.textAlign = 'right';
         boardCtx.fillText('الصف الأول الثانوي • الأستاذ عمر حسان عبره', 980, 50);
 
-        // Title
         boardCtx.fillStyle = '#34d399';
-        boardCtx.font = 'bold 40px "Cairo", sans-serif';
+        boardCtx.font = 'bold 38px "Cairo", sans-serif';
         boardCtx.textAlign = 'center';
-        boardCtx.fillText(title, 512, 130);
+        boardCtx.fillText(title, 512, 125);
 
-        // Formula / Explanation box
+        // Formula Box
         boardCtx.fillStyle = 'rgba(30, 58, 138, 0.4)';
         boardCtx.strokeStyle = '#60a5fa';
         boardCtx.lineWidth = 3;
-        boardCtx.fillRect(150, 180, 724, 180);
-        boardCtx.strokeRect(150, 180, 724, 180);
+        boardCtx.fillRect(140, 180, 744, 180);
+        boardCtx.strokeRect(140, 180, 744, 180);
 
         boardCtx.fillStyle = '#ffffff';
         boardCtx.font = 'bold 46px monospace';
@@ -365,69 +575,115 @@
         if (blackboardTexture) blackboardTexture.needsUpdate = true;
       }
 
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Movement Physics
+        if (moveState.fwd) camPos.z -= 0.08;
+        if (moveState.back) camPos.z += 0.08;
+        if (moveState.left) camPos.x -= 0.08;
+        if (moveState.right) camPos.x += 0.08;
+
+        camera.position.set(camPos.x, camPos.y, camPos.z);
+        renderer.render(scene, camera);
+      }
+
+      function changeCamHeight(delta) {
+        camPos.y = Math.min(Math.max(camPos.y + delta, 1.0), 5.5);
+      }
+
+      function toggleDrawer(type) {
+        const chat = document.getElementById('drawer-chat');
+        const ctrl = document.getElementById('drawer-controls');
+        if (type === 'chat') {
+          chat.classList.toggle('open');
+          ctrl.classList.remove('open');
+        } else {
+          ctrl.classList.toggle('open');
+          chat.classList.remove('open');
+        }
+      }
+
+      function resetCamView() {
+        camPos = { x: 0, y: 1.65, z: 4.8, rotY: 0 };
+      }
+
+      function speakTeacherText(text) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'ar-SA';
+          utterance.rate = 0.95;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+
+      function openMicModal() {
+        document.getElementById('mic-modal').classList.add('open');
+        document.getElementById('student-speech-text').textContent = "(تحدث الآن... المعلم يستمع إليك)";
+
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          const rec = new SpeechRec();
+          rec.lang = 'ar-SA';
+          rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            closeMicModal();
+            processQuery(transcript);
+          };
+          rec.start();
+        }
+      }
+
+      function closeMicModal() {
+        document.getElementById('mic-modal').classList.remove('open');
+      }
+
+      function handleChatSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('user-input');
+        const q = input.value.trim();
+        if (!q) return;
+        input.value = '';
+        processQuery(q);
+      }
+
+      function processQuery(query) {
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML += `<div class="msg msg-user">${query}</div>`;
+
+        setTimeout(() => {
+          let formula = "F = m · a (قانون نيوتن الثاني)";
+          if (query.includes('شغل')) formula = "W = F · d · cos(θ)";
+          if (query.includes('ضغط')) formula = "P = F / A  |  P = ρ · g · h";
+
+          updateBoardContent(`شرح: ${query.slice(0, 24)}`, formula);
+
+          const reply = `سؤال رائع عن ${query}! تفضل بمطالعة السبورة الذكية فقد قمت بتدوين القانون والشرح.`;
+          chatBox.innerHTML += `<div class="msg msg-teacher">${reply}</div>`;
+          chatBox.scrollTop = chatBox.scrollHeight;
+          speakTeacherText(reply);
+        }, 500);
+      }
+
+      function downloadStandaloneApp() {
+        const htmlContent = '<!doctype html>\n' + document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'physics-classroom-standalone.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
       function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
       }
 
-      function animate() {
-        requestAnimationFrame(animate);
-        
-        // Handle smooth movement without affecting HUD
-        if(moveState.fwd) camPos.z -= 0.08;
-        if(moveState.back) camPos.z += 0.08;
-        if(moveState.left) camPos.x -= 0.08;
-        if(moveState.right) camPos.x += 0.08;
-        
-        camera.position.set(camPos.x, camPos.y, camPos.z);
-        renderer.render(scene, camera);
-      }
-
-      function toggleDrawer(type) {
-        const chat = document.getElementById('drawer-chat');
-        const ctrl = document.getElementById('drawer-controls');
-        if(type === 'chat') {
-            chat.classList.toggle('open');
-            ctrl.classList.remove('open');
-        } else {
-            ctrl.classList.toggle('open');
-            chat.classList.remove('open');
-        }
-      }
-
-      function resetCam() {
-        camPos = { x: 0, y: 1.65, z: 4.5 };
-      }
-
-      function saveLessonPDF() {
-        alert('تم تجهيز حفظ ملخص السبورة كملف PDF بنجاح!');
-      }
-
-      function handleUserQuery(e) {
-        e.preventDefault();
-        const input = document.getElementById('user-input');
-        const q = input.value.trim();
-        if(!q) return;
-
-        const box = document.getElementById('chat-messages');
-        box.innerHTML += `<div class="msg msg-user">${q}</div>`;
-        input.value = '';
-
-        // AI Teacher Magic Response & Writing on Blackboard
-        setTimeout(() => {
-            let formulaRes = "F = m · a (قانون نيوتن الثاني)";
-            if(q.includes('شغل')) formulaRes = "W = F · d · cos(θ)";
-            if(q.includes('سرعة')) formulaRes = "v = d / t  |  vf = vi + at";
-
-            updateBoardContent(`شرح: ${q.slice(0, 25)}`, formulaRes);
-
-            box.innerHTML += `<div class="msg msg-teacher">أحسنت يا بطل! لقد دوّنت لك شرح (${q}) والقانون على السبورة الذكية أمامك مباشرة.</div>`;
-            box.scrollTop = box.scrollHeight;
-        }, 600);
-      }
-
-      window.onload = init;
+      window.onload = init3DEngine;
     </script>
 </body>
 </html>
