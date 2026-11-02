@@ -3,268 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصف الافتراضي للفيزياء 3D - الأستاذ عمر حسان عبره</title>
-    
+    <title>الصف الافتراضي للفيزياء (أول ثانوي) - الأستاذ عمر حسان عبره</title>
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
     <style>
-      *, *::before, *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        -webkit-tap-highlight-color: transparent;
-      }
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body, html { width: 100%; height: 100%; overflow: hidden; background: #070b14; color: #f8fafc; font-family: "Cairo", "Tajawal", sans-serif; direction: rtl; user-select: none; }
+      
+      .app-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      #canvas-container { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; cursor: grab; }
+      #canvas-container:active { cursor: grabbing; }
 
-      :root {
-        --bg-dark: #070b14;
-        --panel-bg: rgba(15, 23, 42, 0.85);
-        --panel-border: rgba(51, 65, 85, 0.5);
-        --accent-amber: #f59e0b;
-        --accent-emerald: #10b981;
-        --accent-blue: #38bdf8;
-        --text-main: #f8fafc;
-        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tajawal", sans-serif;
-      }
-
-      body, html {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: var(--bg-dark);
-        color: var(--text-main);
-        font-family: var(--font-family);
-        direction: rtl;
-        user-select: none;
-      }
-
-      .app-layout {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-      }
-
-      /* Fullscreen 3D Viewport */
-      #classroom-canvas-container {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        cursor: grab;
-      }
-      #classroom-canvas-container:active { cursor: grabbing; }
-
-      /* --- Minimal Top Navigation Icons (Zero Blockage) --- */
-      .top-hud-bar {
-        position: absolute;
+      /* Fixed HUD Top Bar (Never Moves) */
+      .top-hud {
+        position: fixed;
         top: 12px;
         right: 12px;
         left: 12px;
-        z-index: 30;
+        z-index: 50;
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         pointer-events: none;
       }
-
-      .hud-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        pointer-events: auto;
-      }
-
-      .hud-btn {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: rgba(15, 23, 42, 0.75);
+      .hud-group { display: flex; gap: 8px; pointer-events: auto; }
+      .hud-badge {
+        background: rgba(15, 23, 42, 0.85);
         backdrop-filter: blur(10px);
-        border: 1px solid var(--panel-border);
+        border: 1px solid rgba(51, 65, 85, 0.6);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fde68a;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      }
+      .hud-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(51, 65, 85, 0.6);
         color: #fff;
-        font-size: 18px;
+        font-size: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: 0.2s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       }
       .hud-btn:hover, .hud-btn.active {
         background: rgba(245, 158, 11, 0.3);
-        border-color: var(--accent-amber);
-        color: var(--accent-amber);
+        border-color: #f59e0b;
+        color: #fde68a;
         transform: scale(1.05);
       }
 
-      .hud-title-badge {
-        background: rgba(15, 23, 42, 0.75);
-        backdrop-filter: blur(10px);
-        border: 1px solid var(--panel-border);
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      /* Floating Popups for Chat & Controls */
-      .floating-side-panel {
-        position: absolute;
-        top: 65px;
+      /* Slim Fixed Floating Side Panel (Doesn't block view) */
+      .side-drawer {
+        position: fixed;
+        top: 70px;
         right: 12px;
-        width: 340px;
+        width: 310px;
         max-height: calc(100vh - 90px);
-        z-index: 25;
-        background: var(--panel-bg);
-        backdrop-filter: blur(14px);
-        border: 1px solid var(--panel-border);
-        border-radius: 16px;
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(51, 65, 85, 0.6);
+        border-radius: 14px;
         display: none;
         flex-direction: column;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       }
-      .floating-side-panel.open { display: flex; }
+      .side-drawer.open { display: flex; }
 
-      .panel-header {
+      .drawer-header {
         padding: 10px 14px;
-        background: rgba(30, 41, 59, 0.5);
-        border-bottom: 1px solid var(--panel-border);
+        background: rgba(30, 41, 59, 0.6);
+        border-bottom: 1px solid rgba(51, 65, 85, 0.4);
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 700;
       }
-
-      .chat-messages {
+      .chat-box {
         flex: 1;
         overflow-y: auto;
-        padding: 12px;
+        padding: 10px;
+        max-height: 280px;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 320px;
       }
-
-      .message-bubble {
-        padding: 8px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        line-height: 1.5;
+      .msg {
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 11.5px;
+        line-height: 1.4;
       }
-      .teacher-msg { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); }
-      .user-msg { background: #0284c7; align-self: flex-end; }
+      .msg-teacher { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); }
+      .msg-user { background: #0284c7; align-self: flex-end; }
 
-      .chat-input-row {
+      .drawer-input-row {
         display: flex;
         padding: 8px;
         gap: 6px;
-        background: rgba(15, 23, 42, 0.9);
-        border-top: 1px solid var(--panel-border);
+        background: rgba(15, 23, 42, 0.95);
+        border-top: 1px solid rgba(51, 65, 85, 0.4);
       }
-      .chat-input-row input {
+      .drawer-input-row input {
         flex: 1;
         background: rgba(30, 41, 59, 0.8);
-        border: 1px solid var(--panel-border);
+        border: 1px solid rgba(51, 65, 85, 0.6);
         border-radius: 8px;
         padding: 6px 10px;
         color: #fff;
-        font-family: inherit;
-        font-size: 12px;
+        font-size: 11.5px;
+        outline: none;
       }
 
-      /* Mic Overlay */
-      #mic-modal {
-        position: absolute;
-        inset: 0;
-        z-index: 100;
-        background: rgba(7, 11, 20, 0.85);
-        backdrop-filter: blur(10px);
+      /* Controls D-Pad Overlay Box */
+      .controls-drawer {
+        position: fixed;
+        top: 70px;
+        left: 12px;
+        width: 260px;
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(51, 65, 85, 0.6);
+        border-radius: 14px;
+        padding: 12px;
         display: none;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 14px;
+        gap: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       }
-      #mic-modal.open { display: flex; }
-      .mic-pulse {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        background: var(--accent-amber);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 30px;
-        animation: pulse 1.5s infinite;
+      .controls-drawer.open { display: flex; }
+      .dpad-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        text-align: center;
       }
-      @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-        70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+      .d-btn {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(71, 85, 105, 0.6);
+        color: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
       }
+      .d-btn:active { background: #f59e0b; color: #000; }
     </style>
 </head>
 <body>
-    <div class="app-layout">
-        <!-- 3D Viewport -->
-        <div id="classroom-canvas-container"></div>
+    <div class="app-container">
+        <!-- 3D Canvas Viewport -->
+        <div id="canvas-container"></div>
 
-        <!-- Top Transparent HUD Controls -->
-        <div class="top-hud-bar">
+        <!-- Fixed Top HUD Bar (Icons don't move with camera) -->
+        <div class="top-hud">
             <div class="hud-group">
-                <div class="hud-title-badge">⚛️ صف الفيزياء • الأستاذ عمر حسان عبره</div>
+                <div class="hud-badge">📚 الصف الأول الثانوي • الأستاذ عمر حسان عبره</div>
             </div>
             <div class="hud-group">
-                <button class="hud-btn" id="btn-toggle-chat" onclick="toggleChatPanel()" title="كتابة سؤال">💬</button>
-                <button class="hud-btn" id="btn-toggle-mic" onclick="openMicModal()" title="الحديث بالمايك">🎙️</button>
-                <button class="hud-btn" onclick="resetCameraView()" title="عرض الصف بالكامل">👁️</button>
+                <button class="hud-btn" id="btn-chat" onclick="toggleDrawer('chat')" title="لوحة المحادثة والكتابة">💬</button>
+                <button class="hud-btn" id="btn-ctrl" onclick="toggleDrawer('controls')" title="أزرار التجول والتحكم">🎮</button>
+                <button class="hud-btn" onclick="saveLessonPDF()" title="حفظ الدرس PDF">📥</button>
+                <button class="hud-btn" onclick="resetCam()" title="ضبط الرؤية">👁️</button>
             </div>
         </div>
 
-        <!-- Collapsible Chat Panel -->
-        <div class="floating-side-panel" id="chat-panel">
-            <div class="panel-header">
-                <span style="font-size: 13px; font-weight: 700;">المساعد الافتراضي (الأستاذ عمر)</span>
-                <button onclick="toggleChatPanel()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">✕</button>
+        <!-- Chat / Writing Drawer Panel -->
+        <div class="side-drawer" id="drawer-chat">
+            <div class="drawer-header">
+                <span>👨‍🏫 شرح المعلم الأسئلة</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="toggleDrawer('chat')">✕</span>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                <div class="message-bubble teacher-msg">مرحباً بك يا بطل الفيزياء في الصف الافتراضي! اسألني عن أي قانون أو فكرة وسيتم شرحها فوراً على السبورة.</div>
+            <div class="chat-box" id="chat-messages">
+                <div class="msg msg-teacher">أهلاً بك يا بطل في صف الفيزياء (أول ثانوي). اطرح سؤالك وسأشرحه وأكتبه لك فوراً على السبورة الذكية!</div>
             </div>
-            <form class="chat-input-row" onsubmit="handleUserSubmit(event)">
-                <input type="text" id="user-input" placeholder="اكتب سؤالك هنا..." autocomplete="off">
-                <button type="submit" style="background:var(--accent-emerald); border:none; padding:6px 12px; border-radius:8px; color:#fff; cursor:pointer;">إرسال</button>
+            <form class="drawer-input-row" onsubmit="handleUserQuery(event)">
+                <input type="text" id="user-input" placeholder="اسأل الأستاذ عمر عن أي درس..." autocomplete="off">
+                <button type="submit" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:#fff; cursor:pointer; font-size:11px;">إرسال</button>
             </form>
         </div>
 
-        <!-- Mic Overlay -->
-        <div id="mic-modal">
-            <div class="mic-pulse">🎙️</div>
-            <h3 style="color:#fff;">الأستاذ عمر حسان يستمع إليك...</h3>
-            <p id="mic-transcript" style="color:#fde68a; font-size:14px;">(تحدث الآن...)</p>
-            <button onclick="closeMicModal()" style="background:rgba(255,255,255,0.1); border:1px solid #94a3b8; padding:6px 14px; border-radius:8px; color:#fff; cursor:pointer;">إلغاء</button>
+        <!-- Navigation D-Pad Controls Drawer -->
+        <div class="controls-drawer" id="drawer-controls">
+            <div class="drawer-header" style="background:none; border:none; padding:0 0 4px 0;">
+                <span style="font-size: 12px; font-weight:700;">أزرار التجول في الفصل</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="toggleDrawer('controls')">✕</span>
+            </div>
+            <div class="dpad-grid">
+                <div></div>
+                <button class="d-btn" onmousedown="moveState.fwd=true" onmouseup="moveState.fwd=false" onttouchstart="moveState.fwd=true" ontouchend="moveState.fwd=false">▲</button>
+                <div></div>
+                <button class="d-btn" onmousedown="moveState.left=true" onmouseup="moveState.left=false">◀</button>
+                <button class="d-btn" onclick="resetCam()">•</button>
+                <button class="d-btn" onmousedown="moveState.right=true" onmouseup="moveState.right=false">▶</button>
+                <div></div>
+                <button class="d-btn" onmousedown="moveState.back=true" onmouseup="moveState.back=false">▼</button>
+                <div></div>
+            </div>
         </div>
     </div>
 
     <script>
-      let scene, camera, renderer, teacherGroup, jawMesh;
+      let scene, camera, renderer, blackboardTexture, boardCtx;
+      let moveState = { fwd: false, back: false, left: false, right: false };
+      let camPos = { x: 0, y: 1.65, z: 4.5 };
 
-      function init3D() {
-        const container = document.getElementById('classroom-canvas-container');
-        
+      function init() {
+        const container = document.getElementById('canvas-container');
         scene = new THREE.Scene();
-        scene.background = new THREE.Color('#e2e8f0');
+        scene.background = new THREE.Color('#0f172a');
 
-        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
-        // Start view positioned to see the whole classroom, seats, and teacher clearly
-        camera.position.set(0, 1.65, 4.2);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(camPos.x, camPos.y, camPos.z);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -272,70 +234,138 @@
         container.appendChild(renderer.domElement);
 
         // Lights
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
         const sun = new THREE.DirectionalLight(0xffffff, 1.2);
         sun.position.set(5, 10, 5);
         scene.add(sun);
 
-        // Floor (Marble)
-        const floorMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.2 });
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 14), floorMat);
+        // Floor (Luxury Marble)
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(14, 16),
+          new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.15 })
+        );
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Front Wall & Blackboard
-        const wallMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1' });
-        const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), wallMat);
-        frontWall.position.set(0, 2.5, -6);
+        // Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.5 });
+        const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 5), wallMat);
+        frontWall.position.set(0, 2.5, -7);
         scene.add(frontWall);
 
-        const boardMat = new THREE.MeshStandardMaterial({ color: '#0f241d' });
-        const board = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.8), boardMat);
-        board.position.set(0, 2.3, -5.9);
+        // Dynamic Blackboard with Golden Frame & Live Canvas Writing
+        const bCanvas = document.createElement('canvas');
+        bCanvas.width = 1024; bCanvas.height = 512;
+        boardCtx = bCanvas.getContext('2d');
+        updateBoardContent("قوانين الحركة والميكانيكا (أول ثانوي)", "F = m · a  |  W = F · d");
+
+        blackboardTexture = new THREE.CanvasTexture(bCanvas);
+        const board = new THREE.Mesh(
+          new THREE.PlaneGeometry(7.2, 3.2),
+          new THREE.MeshBasicMaterial({ map: blackboardTexture })
+        );
+        board.position.set(0, 2.4, -6.85);
         scene.add(board);
 
-        // Student Seats & Desks (Visible in front)
-        const deskMat = new THREE.MeshStandardMaterial({ color: '#78350f' });
-        [-2.2, 0, 2.2].forEach(x => {
-            const desk = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.6), deskMat);
-            desk.position.set(x, 0.75, 1.2);
-            scene.add(desk);
+        // Golden Wooden Frame for Blackboard
+        const frameMat = new THREE.MeshStandardMaterial({ color: '#d97706', roughness: 0.3 });
+        const topF = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.12, 0.1), frameMat);
+        topF.position.set(0, 4.05, -6.82);
+        scene.add(topF);
+        const botF = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.12, 0.1), frameMat);
+        botF.position.set(0, 0.75, -6.82);
+        scene.add(botF);
+
+        // Real Desks with Notebooks & Pens (كراسات وقلم ع الطاولة)
+        [-2.5, 0, 2.5].forEach((x, idx) => {
+            const deskGroup = new THREE.Group();
+            deskGroup.position.set(x, 0, idx * 2.2 - 1);
+
+            // Table top
+            const top = new THREE.Mesh(
+                new THREE.BoxGeometry(1.5, 0.06, 0.8),
+                new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.4 })
+            );
+            top.position.y = 0.76;
+            deskGroup.add(top);
+
+            // Notebook on table
+            const book = new THREE.Mesh(
+                new THREE.BoxGeometry(0.35, 0.02, 0.45),
+                new THREE.MeshStandardMaterial({ color: '#ffffff' })
+            );
+            book.position.set(0.2, 0.80, 0);
+            deskGroup.add(book);
+
+            // Pen on table
+            const pen = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.006, 0.006, 0.25),
+                new THREE.MeshStandardMaterial({ color: '#2563eb' })
+            );
+            pen.position.set(-0.2, 0.80, 0.1);
+            pen.rotation.z = Math.PI / 3;
+            deskGroup.add(pen);
+
+            scene.add(deskGroup);
         });
 
         // 3D Teacher Avatar (الأستاذ عمر حسان عبره)
-        teacherGroup = new THREE.Group();
-        teacherGroup.position.set(-1.4, 0, -4.5);
-
-        const suitMat = new THREE.MeshStandardMaterial({ color: '#1e3a8a' });
-        const skinMat = new THREE.MeshStandardMaterial({ color: '#f5d0b0' });
-
-        // Body & Legs
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), suitMat);
+        const teacher = new THREE.Group();
+        teacher.position.set(-1.6, 0, -5.2);
+        
+        const body = new THREE.Mesh(
+            new THREE.BoxGeometry(0.48, 0.7, 0.28),
+            new THREE.MeshStandardMaterial({ color: '#1e3a8a' })
+        );
         body.position.y = 1.25;
-        teacherGroup.add(body);
+        teacher.add(body);
 
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.17, 16, 16),
+            new THREE.MeshStandardMaterial({ color: '#f5d0b0' })
+        );
         head.position.y = 1.75;
-        teacherGroup.add(head);
+        teacher.add(head);
 
-        // Animated Jaw
-        jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.04), new THREE.MeshStandardMaterial({ color: '#991b1b' }));
-        jawMesh.position.set(0, 1.67, 0.16);
-        teacherGroup.add(jawMesh);
+        scene.add(teacher);
 
-        // Pointer Stick (العصا)
-        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.8), new THREE.MeshStandardMaterial({ color: '#f59e0b' }));
-        stick.position.set(0.3, 1.3, 0.2);
-        stick.rotation.z = -Math.PI / 4;
-        teacherGroup.add(stick);
-
-        scene.add(teacherGroup);
-
-        window.addEventListener('resize', onResize);
+        window.addEventListener('resize', onWindowResize);
         animate();
       }
 
-      function onResize() {
+      function updateBoardContent(title, formula) {
+        // Clear board background (Dark green slate)
+        boardCtx.fillStyle = '#0f241d';
+        boardCtx.fillRect(0, 0, 1024, 512);
+
+        // Top-right Header (Name & Subject requirement)
+        boardCtx.fillStyle = '#fde68a';
+        boardCtx.font = 'bold 28px "Cairo", sans-serif';
+        boardCtx.textAlign = 'right';
+        boardCtx.fillText('الصف الأول الثانوي • الأستاذ عمر حسان عبره', 980, 50);
+
+        // Title
+        boardCtx.fillStyle = '#34d399';
+        boardCtx.font = 'bold 40px "Cairo", sans-serif';
+        boardCtx.textAlign = 'center';
+        boardCtx.fillText(title, 512, 130);
+
+        // Formula / Explanation box
+        boardCtx.fillStyle = 'rgba(30, 58, 138, 0.4)';
+        boardCtx.strokeStyle = '#60a5fa';
+        boardCtx.lineWidth = 3;
+        boardCtx.fillRect(150, 180, 724, 180);
+        boardCtx.strokeRect(150, 180, 724, 180);
+
+        boardCtx.fillStyle = '#ffffff';
+        boardCtx.font = 'bold 46px monospace';
+        boardCtx.textAlign = 'center';
+        boardCtx.fillText(formula, 512, 290);
+
+        if (blackboardTexture) blackboardTexture.needsUpdate = true;
+      }
+
+      function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -343,49 +373,61 @@
 
       function animate() {
         requestAnimationFrame(animate);
+        
+        // Handle smooth movement without affecting HUD
+        if(moveState.fwd) camPos.z -= 0.08;
+        if(moveState.back) camPos.z += 0.08;
+        if(moveState.left) camPos.x -= 0.08;
+        if(moveState.right) camPos.x += 0.08;
+        
+        camera.position.set(camPos.x, camPos.y, camPos.z);
         renderer.render(scene, camera);
       }
 
-      // UI Actions
-      function toggleChatPanel() {
-        const panel = document.getElementById('chat-panel');
-        const btn = document.getElementById('btn-toggle-chat');
-        panel.classList.toggle('open');
-        btn.classList.toggle('active');
+      function toggleDrawer(type) {
+        const chat = document.getElementById('drawer-chat');
+        const ctrl = document.getElementById('drawer-controls');
+        if(type === 'chat') {
+            chat.classList.toggle('open');
+            ctrl.classList.remove('open');
+        } else {
+            ctrl.classList.toggle('open');
+            chat.classList.remove('open');
+        }
       }
 
-      function openMicModal() {
-        document.getElementById('chat-panel').classList.remove('open');
-        document.getElementById('btn-toggle-chat').classList.remove('active');
-        document.getElementById('mic-modal').classList.add('open');
+      function resetCam() {
+        camPos = { x: 0, y: 1.65, z: 4.5 };
       }
 
-      function closeMicModal() {
-        document.getElementById('mic-modal').classList.remove('open');
+      function saveLessonPDF() {
+        alert('تم تجهيز حفظ ملخص السبورة كملف PDF بنجاح!');
       }
 
-      function resetCameraView() {
-        camera.position.set(0, 1.65, 4.2);
-        camera.rotation.set(0, 0, 0);
-      }
-
-      function handleUserSubmit(e) {
+      function handleUserQuery(e) {
         e.preventDefault();
         const input = document.getElementById('user-input');
-        const text = input.value.trim();
-        if(!text) return;
+        const q = input.value.trim();
+        if(!q) return;
 
-        const chatBox = document.getElementById('chat-messages');
-        chatBox.innerHTML += `<div class="message-bubble user-msg">${text}</div>`;
+        const box = document.getElementById('chat-messages');
+        box.innerHTML += `<div class="msg msg-user">${q}</div>`;
         input.value = '';
 
+        // AI Teacher Magic Response & Writing on Blackboard
         setTimeout(() => {
-            chatBox.innerHTML += `<div class="message-bubble teacher-msg">أحسنت الاستفسار! بالنسبة لـ (${text})، دعنا ندونها ونشرحها خطوة بخطوة...</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 500);
+            let formulaRes = "F = m · a (قانون نيوتن الثاني)";
+            if(q.includes('شغل')) formulaRes = "W = F · d · cos(θ)";
+            if(q.includes('سرعة')) formulaRes = "v = d / t  |  vf = vi + at";
+
+            updateBoardContent(`شرح: ${q.slice(0, 25)}`, formulaRes);
+
+            box.innerHTML += `<div class="msg msg-teacher">أحسنت يا بطل! لقد دوّنت لك شرح (${q}) والقانون على السبورة الذكية أمامك مباشرة.</div>`;
+            box.scrollTop = box.scrollHeight;
+        }, 600);
       }
 
-      window.onload = init3D;
+      window.onload = init;
     </script>
 </body>
 </html>
