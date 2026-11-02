@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الصف الافتراضي للفيزياء 3D - الأستاذ عمر حسان عبره</title>
+    
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :root {
+        --bg-dark: #070b14;
+        --panel-bg: rgba(15, 23, 42, 0.85);
+        --panel-border: rgba(51, 65, 85, 0.5);
+        --accent-amber: #f59e0b;
+        --accent-emerald: #10b981;
+        --accent-blue: #38bdf8;
+        --text-main: #f8fafc;
+        --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tajawal", sans-serif;
+      }
+
+      body, html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        font-family: var(--font-family);
+        direction: rtl;
+        user-select: none;
+      }
+
+      .app-layout {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Fullscreen 3D Viewport */
+      #classroom-canvas-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        cursor: grab;
+      }
+      #classroom-canvas-container:active { cursor: grabbing; }
+
+      /* --- Minimal Top Navigation Icons (Zero Blockage) --- */
+      .top-hud-bar {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        left: 12px;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+
+      .hud-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+      }
+
+      .hud-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--panel-border);
+        color: #fff;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      }
+      .hud-btn:hover, .hud-btn.active {
+        background: rgba(245, 158, 11, 0.3);
+        border-color: var(--accent-amber);
+        color: var(--accent-amber);
+        transform: scale(1.05);
+      }
+
+      .hud-title-badge {
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--panel-border);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Floating Popups for Chat & Controls */
+      .floating-side-panel {
+        position: absolute;
+        top: 65px;
+        right: 12px;
+        width: 340px;
+        max-height: calc(100vh - 90px);
+        z-index: 25;
+        background: var(--panel-bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--panel-border);
+        border-radius: 16px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      }
+      .floating-side-panel.open { display: flex; }
+
+      .panel-header {
+        padding: 10px 14px;
+        background: rgba(30, 41, 59, 0.5);
+        border-bottom: 1px solid var(--panel-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 320px;
+      }
+
+      .message-bubble {
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .teacher-msg { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); }
+      .user-msg { background: #0284c7; align-self: flex-end; }
+
+      .chat-input-row {
+        display: flex;
+        padding: 8px;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.9);
+        border-top: 1px solid var(--panel-border);
+      }
+      .chat-input-row input {
+        flex: 1;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--panel-border);
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: #fff;
+        font-family: inherit;
+        font-size: 12px;
+      }
+
+      /* Mic Overlay */
+      #mic-modal {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        background: rgba(7, 11, 20, 0.85);
+        backdrop-filter: blur(10px);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+      }
+      #mic-modal.open { display: flex; }
+      .mic-pulse {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: var(--accent-amber);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+      }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- 3D Viewport -->
+        <div id="classroom-canvas-container"></div>
+
+        <!-- Top Transparent HUD Controls -->
+        <div class="top-hud-bar">
+            <div class="hud-group">
+                <div class="hud-title-badge">⚛️ صف الفيزياء • الأستاذ عمر حسان عبره</div>
+            </div>
+            <div class="hud-group">
+                <button class="hud-btn" id="btn-toggle-chat" onclick="toggleChatPanel()" title="كتابة سؤال">💬</button>
+                <button class="hud-btn" id="btn-toggle-mic" onclick="openMicModal()" title="الحديث بالمايك">🎙️</button>
+                <button class="hud-btn" onclick="resetCameraView()" title="عرض الصف بالكامل">👁️</button>
+            </div>
+        </div>
+
+        <!-- Collapsible Chat Panel -->
+        <div class="floating-side-panel" id="chat-panel">
+            <div class="panel-header">
+                <span style="font-size: 13px; font-weight: 700;">المساعد الافتراضي (الأستاذ عمر)</span>
+                <button onclick="toggleChatPanel()" style="background:none; border:none; color:#94a3b8; cursor:pointer;">✕</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message-bubble teacher-msg">مرحباً بك يا بطل الفيزياء في الصف الافتراضي! اسألني عن أي قانون أو فكرة وسيتم شرحها فوراً على السبورة.</div>
+            </div>
+            <form class="chat-input-row" onsubmit="handleUserSubmit(event)">
+                <input type="text" id="user-input" placeholder="اكتب سؤالك هنا..." autocomplete="off">
+                <button type="submit" style="background:var(--accent-emerald); border:none; padding:6px 12px; border-radius:8px; color:#fff; cursor:pointer;">إرسال</button>
+            </form>
+        </div>
+
+        <!-- Mic Overlay -->
+        <div id="mic-modal">
+            <div class="mic-pulse">🎙️</div>
+            <h3 style="color:#fff;">الأستاذ عمر حسان يستمع إليك...</h3>
+            <p id="mic-transcript" style="color:#fde68a; font-size:14px;">(تحدث الآن...)</p>
+            <button onclick="closeMicModal()" style="background:rgba(255,255,255,0.1); border:1px solid #94a3b8; padding:6px 14px; border-radius:8px; color:#fff; cursor:pointer;">إلغاء</button>
+        </div>
+    </div>
+
+    <script>
+      let scene, camera, renderer, teacherGroup, jawMesh;
+
+      function init3D() {
+        const container = document.getElementById('classroom-canvas-container');
+        
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color('#e2e8f0');
+
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+        // Start view positioned to see the whole classroom, seats, and teacher clearly
+        camera.position.set(0, 1.65, 4.2);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        sun.position.set(5, 10, 5);
+        scene.add(sun);
+
+        // Floor (Marble)
+        const floorMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.2 });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 14), floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Front Wall & Blackboard
+        const wallMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1' });
+        const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), wallMat);
+        frontWall.position.set(0, 2.5, -6);
+        scene.add(frontWall);
+
+        const boardMat = new THREE.MeshStandardMaterial({ color: '#0f241d' });
+        const board = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.8), boardMat);
+        board.position.set(0, 2.3, -5.9);
+        scene.add(board);
+
+        // Student Seats & Desks (Visible in front)
+        const deskMat = new THREE.MeshStandardMaterial({ color: '#78350f' });
+        [-2.2, 0, 2.2].forEach(x => {
+            const desk = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.6), deskMat);
+            desk.position.set(x, 0.75, 1.2);
+            scene.add(desk);
+        });
+
+        // 3D Teacher Avatar (الأستاذ عمر حسان عبره)
+        teacherGroup = new THREE.Group();
+        teacherGroup.position.set(-1.4, 0, -4.5);
+
+        const suitMat = new THREE.MeshStandardMaterial({ color: '#1e3a8a' });
+        const skinMat = new THREE.MeshStandardMaterial({ color: '#f5d0b0' });
+
+        // Body & Legs
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), suitMat);
+        body.position.y = 1.25;
+        teacherGroup.add(body);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
+        head.position.y = 1.75;
+        teacherGroup.add(head);
+
+        // Animated Jaw
+        jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.04), new THREE.MeshStandardMaterial({ color: '#991b1b' }));
+        jawMesh.position.set(0, 1.67, 0.16);
+        teacherGroup.add(jawMesh);
+
+        // Pointer Stick (العصا)
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.8), new THREE.MeshStandardMaterial({ color: '#f59e0b' }));
+        stick.position.set(0.3, 1.3, 0.2);
+        stick.rotation.z = -Math.PI / 4;
+        teacherGroup.add(stick);
+
+        scene.add(teacherGroup);
+
+        window.addEventListener('resize', onResize);
+        animate();
+      }
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      // UI Actions
+      function toggleChatPanel() {
+        const panel = document.getElementById('chat-panel');
+        const btn = document.getElementById('btn-toggle-chat');
+        panel.classList.toggle('open');
+        btn.classList.toggle('active');
+      }
+
+      function openMicModal() {
+        document.getElementById('chat-panel').classList.remove('open');
+        document.getElementById('btn-toggle-chat').classList.remove('active');
+        document.getElementById('mic-modal').classList.add('open');
+      }
+
+      function closeMicModal() {
+        document.getElementById('mic-modal').classList.remove('open');
+      }
+
+      function resetCameraView() {
+        camera.position.set(0, 1.65, 4.2);
+        camera.rotation.set(0, 0, 0);
+      }
+
+      function handleUserSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if(!text) return;
+
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML += `<div class="message-bubble user-msg">${text}</div>`;
+        input.value = '';
+
+        setTimeout(() => {
+            chatBox.innerHTML += `<div class="message-bubble teacher-msg">أحسنت الاستفسار! بالنسبة لـ (${text})، دعنا ندونها ونشرحها خطوة بخطوة...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 500);
+      }
+
+      window.onload = init3D;
+    </script>
+</body>
+</html>
+
